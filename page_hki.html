@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manajemen Materi Perkuliahan</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Google Fonts Plus Jakarta Sans & Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: '#009241',
+                        'primary-dark': '#007534',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #f9fafb;
+            min-height: 100vh;
+            zoom: 90%;
+        }
+
+        /* Subtle custom scrollbar */
+        ::-webkit-scrollbar {
+            height: 8px;
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #009241;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #007534;
+        }
+
+        @media print {
+            body {
+                background: white !important;
+                zoom: 100% !important;
+            }
+            #searchSection, #btnPrint, footer, .no-print {
+                display: none !important;
+            }
+            table {
+                font-size: 11px !important;
+            }
+        }
+    </style>
+</head>
+
+<body class="text-gray-800 font-sans p-4 sm:p-8 antialiased selection:bg-[#009241] selection:text-white">
+
+    <div class="max-w-6xl mx-auto space-y-6">
+
+        <div class="bg-white border rounded-xl p-4 sm:p-5 shadow-sm">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+
+                <div class="flex items-center gap-4 text-center sm:text-left">
+                    <div class="w-12 h-12 rounded-xl bg-gradient-to-tr from-[#009241] to-emerald-500 flex items-center justify-center text-white shadow-md shrink-0">
+                        <i data-lucide="graduation-cap" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-lg sm:text-2xl font-bold tracking-tight text-gray-900">
+                            Perlindungan Hukum Perempuan
+                        </h1>
+                        <p id="tanggal" class="text-gray-500 text-xs sm:text-sm mt-0.5"></p>
+                    </div>
+                </div>
+
+                <div class="text-center sm:text-right bg-gray-50 border border-gray-100 px-4 py-2.5 rounded-xl shrink-0">
+                    <p class="text-[10px] uppercase tracking-wider text-gray-400 font-medium">Waktu Sekarang</p>
+                    <p id="jam" class="text-lg sm:text-xl font-semibold font-mono text-[#009241]"></p>
+                </div>
+
+            </div>
+        </div>
+
+        <div id="searchSection" class="bg-white border rounded-xl p-4 shadow-sm flex flex-col sm:flex-row items-center gap-3">
+
+            <div class="relative w-full">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-gray-400">
+                    <i data-lucide="search" class="w-4 h-4"></i>
+                </span>
+                <input 
+                    type="text" 
+                    id="search"
+                    placeholder="Cari topik, materi, atau kata kunci..."
+                    class="w-full pl-10 pr-4 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#009241] focus:border-transparent transition-all"
+                >
+            </div>
+
+            <div class="w-full sm:w-60 shrink-0">
+                <select 
+                    id="filterPertemuan"
+                    class="w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#009241] focus:border-transparent transition-all bg-white"
+                >
+                    <option value="">Semua Pertemuan</option>
+                </select>
+            </div>
+
+            <button 
+                id="btnPrint"
+                onclick="window.print()"
+                class="w-full sm:w-auto bg-[#333333] hover:bg-black text-white px-5 py-2.5 rounded-lg font-medium text-sm transition-all shadow-sm flex items-center justify-center gap-2 shrink-0">
+                <i data-lucide="printer" class="w-4 h-4"></i>
+                <span>Cetak PDF</span>
+            </button>
+
+        </div>
+
+        <div class="flex items-center justify-between px-1 text-xs text-gray-500">
+            <span id="rowCountText"><i data-lucide="list-checks" class="w-3.5 h-3.5 inline mr-1 text-[#009241]"></i> Menampilkan data...</span>
+            <span class="text-gray-400"><span class="inline-block w-2 h-2 rounded-full bg-emerald-500 mr-1 animate-pulse"></span> Live Spreadsheet Sync</span>
+        </div>
+
+        <div class="bg-white border rounded-xl shadow-sm overflow-hidden">
+            <div class="overflow-x-auto w-full max-h-[70vh] overflow-y-auto">
+                <table class="w-full text-sm border-collapse">
+                    <thead class="bg-gray-100 sticky top-0 z-20 shadow-sm">
+                        <tr>
+                            <th class="px-4 py-3.5 border text-center font-semibold text-gray-700 w-28 bg-gray-100">Pertemuan</th>
+                            <th class="px-4 py-3.5 border font-semibold text-gray-700 min-w-[220px] bg-gray-100">Topik / Subtopik</th>
+                            <th class="px-4 py-3.5 border font-semibold text-gray-700 min-w-[180px] bg-gray-100">CPMK</th>
+                            <th class="px-4 py-3.5 border font-semibold text-gray-700 min-w-[160px] bg-gray-100">Metode</th>
+                            <th class="px-4 py-3.5 border font-semibold text-gray-700 min-w-[200px] bg-gray-100">Tugas / Penilaian</th>
+                            <th class="px-4 py-3.5 border text-center font-semibold text-gray-700 w-24 bg-gray-100">Materi</th>
+                            <th class="px-4 py-3.5 border text-center font-semibold text-gray-700 w-24 bg-gray-100">Slide</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody" class="divide-y divide-gray-100">
+                        <tr>
+                            <td colspan="7" class="text-center py-16 text-gray-500 font-medium">
+                                <div class="flex flex-col items-center justify-center space-y-3">
+                                    <div class="w-7 h-7 border-3 border-gray-200 border-t-[#009241] rounded-full animate-spin"></div>
+                                    <p class="text-xs text-gray-500">Memuat data dari Google Spreadsheet...</p>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        // Google Apps Script API URL
+        const API_URL = "https://script.google.com/macros/s/AKfycbzPEnHwnIDAzh1xdmQu0EzU8MQAWp01bVv442pc7YXV-yu_s6ah-tdu-5Odvvu-RaId/exec";
+        
+        let rpsData = [];
+
+        // Real-time Clock
+        setInterval(() => {
+            const now = new Date();
+            document.getElementById("jam").innerText = now.toLocaleTimeString("id-ID", { hour12: false });
+        }, 1000);
+
+        // Date Display
+        document.getElementById("tanggal").innerText = new Date().toLocaleDateString("id-ID", {
+            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+        });
+
+        async function loadData() {
+            try {
+                const res = await fetch(API_URL);
+                const result = await res.json();
+                
+                if (result.status === "success") {
+                    rpsData = result.data;
+                    populateFilterDropdown(rpsData);
+                    renderTable(rpsData);
+                } else {
+                    showError(result.message || "Gagal memuat data dari spreadsheet.");
+                }
+            } catch (err) {
+                console.error("Error fetching data:", err);
+                showError("Terjadi kesalahan koneksi ke Google Spreadsheet.");
+            }
+        }
+
+        function populateFilterDropdown(data) {
+            const filter = document.getElementById("filterPertemuan");
+            filter.innerHTML = '<option value="">Semua Pertemuan</option>';
+
+            const meetingsSet = new Set();
+            data.forEach(item => {
+                if (item.pertemuan !== undefined && item.pertemuan !== null && String(item.pertemuan).trim() !== "") {
+                    meetingsSet.add(String(item.pertemuan).trim());
+                }
+            });
+
+            Array.from(meetingsSet).sort((a,b) => Number(a) - Number(b)).forEach(p => {
+                filter.innerHTML += `<option value="${p}">Pertemuan ${p}</option>`;
+            });
+        }
+
+        function renderTable(data) {
+            const tbody = document.getElementById("tableBody");
+            tbody.innerHTML = "";
+
+            if (!data || data.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-center py-16 text-gray-500 font-medium">
+                            <div class="flex flex-col items-center justify-center space-y-2">
+                                <i data-lucide="folder-open" class="w-8 h-8 text-gray-400"></i>
+                                <p>Tidak ada data ditemukan.</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                document.getElementById("rowCountText").innerHTML = `<i data-lucide="list-checks" class="w-3.5 h-3.5 inline mr-1 text-[#009241]"></i> Menampilkan 0 baris pertemuan`;
+                lucide.createIcons();
+                return;
+            }
+
+            data.forEach((row) => {
+                const tr = document.createElement("tr");
+                tr.className = "hover:bg-gray-50/80 transition-colors group";
+
+                // Materi Link Icon
+                let materiContent = '<span class="text-gray-400">-</span>';
+                if (row.materiLink && String(row.materiLink).trim() !== "" && row.materiLink !== "-") {
+                    materiContent = `
+                        <a href="${row.materiLink}" target="_blank" rel="noopener noreferrer" 
+                           class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gray-50 text-blue-600 hover:text-white hover:bg-blue-600 border border-gray-200 hover:border-blue-600 transition-all shadow-xs group-hover:scale-105" 
+                           title="Buka Materi">
+                            <i data-lucide="link" class="w-4 h-4"></i>
+                        </a>
+                    `;
+                }
+
+                // Slide Link Icon
+                let slideContent = '<span class="text-gray-400">-</span>';
+                if (row.slideLink && String(row.slideLink).trim() !== "" && row.slideLink !== "-") {
+                    slideContent = `
+                        <a href="${row.slideLink}" target="_blank" rel="noopener noreferrer" 
+                           class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gray-50 text-emerald-600 hover:text-white hover:bg-emerald-600 border border-gray-200 hover:border-emerald-600 transition-all shadow-xs group-hover:scale-105" 
+                           title="Buka Slide">
+                            <i data-lucide="file-text" class="w-4 h-4"></i>
+                        </a>
+                    `;
+                }
+
+                tr.innerHTML = `
+                    <td class="px-4 py-3 border text-center font-bold text-gray-800">
+                        <span class="inline-flex items-center justify-center px-2.5 py-0.5 bg-gray-100 border border-gray-200 text-[#009241] rounded-md text-xs shadow-2xs">
+                            ${row.pertemuan || '-'}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3 border text-gray-800 font-medium">${row.subCpmk || row.materi || '-'}</td>
+                    <td class="px-4 py-3 border text-gray-600 text-xs">${row.materi || row.subCpmk || '-'}</td>
+                    <td class="px-4 py-3 border text-gray-600">
+                        <span class="px-2 py-0.5 bg-gray-100 border border-gray-200 rounded text-xs text-gray-700 font-medium">
+                            ${row.metode || '-'}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3 border text-gray-600 text-xs leading-relaxed">${row.evaluasi || row.pengalaman || '-'}</td>
+                    <td class="px-4 py-3 border text-center">${materiContent}</td>
+                    <td class="px-4 py-3 border text-center">${slideContent}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById("rowCountText").innerHTML = `<i data-lucide="list-checks" class="w-3.5 h-3.5 inline mr-1 text-[#009241]"></i> Menampilkan ${data.length} baris pertemuan`;
+            lucide.createIcons();
+        }
+
+        // Search Input Listener
+        document.getElementById("search").addEventListener("keyup", function() {
+            applyFilters();
+        });
+
+        // Filter Dropdown Listener
+        document.getElementById("filterPertemuan").addEventListener("change", function() {
+            applyFilters();
+        });
+
+        function applyFilters() {
+            const query = document.getElementById("search").value.toLowerCase().trim();
+            const selectedMeeting = document.getElementById("filterPertemuan").value;
+
+            const filtered = rpsData.filter(item => {
+                const pertemuanStr = String(item.pertemuan || "").toLowerCase();
+                const subCpmkStr = String(item.subCpmk || "").toLowerCase();
+                const materiStr = String(item.materi || "").toLowerCase();
+                const metodeStr = String(item.metode || "").toLowerCase();
+                const evaluasiStr = String(item.evaluasi || "").toLowerCase();
+                const pengalamanStr = String(item.pengalaman || "").toLowerCase();
+
+                const matchesQuery = !query || 
+                    pertemuanStr.includes(query) ||
+                    subCpmkStr.includes(query) ||
+                    materiStr.includes(query) ||
+                    metodeStr.includes(query) ||
+                    evaluasiStr.includes(query) ||
+                    pengalamanStr.includes(query);
+
+                const matchesMeeting = !selectedMeeting || String(item.pertemuan).trim() === selectedMeeting;
+
+                return matchesQuery && matchesMeeting;
+            });
+
+            renderTable(filtered);
+        }
+
+        function showError(message) {
+            const tbody = document.getElementById("tableBody");
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7" class="text-center py-16 text-rose-500 font-medium">
+                        <div class="flex flex-col items-center justify-center space-y-2">
+                            <i data-lucide="triangle-alert" class="w-8 h-8"></i>
+                            <p>${message}</p>
+                            <p class="text-xs text-gray-400">Pastikan URL Apps Script aktif dan Google Spreadsheet memiliki header yang sesuai.</p>
+                        </div>
+                    </td>
+                </tr>
+            `;
+            lucide.createIcons();
+        }
+
+        // Load data on page init
+        loadData();
+    </script>
+</body>
+</html>
